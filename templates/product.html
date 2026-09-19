@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.title }} — HomeNest Store{% endblock %}
+{% block content %}
+<div class="container product-detail product-detail-pro">
+  <div class="breadcrumbs"><a href="{{ url_for('shop') }}">Shop</a><i class="ri-arrow-right-s-line"></i><span>{{ product.title }}</span></div>
+  <div class="detail-grid">
+    <div class="product-gallery" data-product-gallery>
+      {% set gallery = [product.image_url] %}
+      {% for media in [product.image_2, product.image_3, product.image_4] %}
+        {% if media and media not in gallery %}{% set _ = gallery.append(media) %}{% endif %}
+      {% endfor %}
+      <div class="gallery-main-wrap" data-gallery-stage aria-label="{{ product.title }} image gallery">
+        <button class="gallery-nav prev" type="button" data-gallery-prev aria-label="Previous image"><i class="ri-arrow-left-s-line"></i></button>
+        <button class="gallery-zoom-hint" type="button" data-open-zoom aria-label="Open product images full screen"><i class="ri-zoom-in-line"></i><span>Click to enlarge</span></button>
+        <button class="gallery-nav next" type="button" data-gallery-next aria-label="Next image"><i class="ri-arrow-right-s-line"></i></button>
+        <img id="galleryMain" class="gallery-main" src="{{ gallery[0] }}" alt="{{ product.title }}" data-open-zoom draggable="false">
+        <span class="detail-badge">{{ product.badge or 'HomeNest pick' }}</span>
+        <span class="gallery-count"><span id="galleryIndex">1</span> / <span id="galleryTotal">{{ gallery|length }}</span></span>
+      </div>
+      <div class="gallery-thumbs" role="list" aria-label="Product image thumbnails">
+        {% for image in gallery %}
+        <button class="gallery-thumb {{ 'active' if loop.first else '' }}" type="button" data-gallery-thumb data-index="{{ loop.index0 }}" data-src="{{ image }}" aria-label="View image {{ loop.index }} of {{ gallery|length }}"><img src="{{ image }}" alt="{{ product.title }} view {{ loop.index }}" loading="lazy"></button>
+        {% endfor %}
+      </div>
+      <div class="gallery-tip"><i class="ri-cursor-line"></i><span>Hover to inspect • click to open • drag or scroll to zoom</span></div>
+    </div>
+
+    <div class="detail-copy">
+      <div class="eyebrow">{{ product.category|title }}</div>
+      <h1>{{ product.title }}</h1>
+      <div class="rating"><span><i class="ri-star-fill"></i> {{ product.rating }}</span><span>{{ product.review_count }} reviews</span><span>•</span><span>{{ product.stock }} in stock</span></div>
+      <div class="detail-price"><strong>{{ product.price|money }}</strong>{% if product.compare_price > product.price %}<del>{{ product.compare_price|money }}</del><span>{{ ((1 - (product.price / product.compare_price))*100)|round|int }}% off</span>{% endif %}</div>
+      <p class="lead">{{ product.short_description }}</p>
+      <div class="detail-desc">{{ product.description }}</div>
+      <div class="purchase-row"><div class="qty"><button type="button" onclick="stepQty(-1)" aria-label="Decrease quantity">−</button><input id="detailQty" value="1" min="1" max="{{ product.stock }}" inputmode="numeric" aria-label="Quantity"><button type="button" onclick="stepQty(1)" aria-label="Increase quantity">+</button></div><button class="btn outline grow" data-add="{{ product.id }}">Add to cart <i class="ri-shopping-bag-3-line"></i></button><button class="btn dark grow" data-buy="{{ product.id }}">Buy it now <i class="ri-flashlight-line"></i></button></div>
+      <div class="detail-trust"><div><i class="ri-truck-line"></i><span><b>Fast delivery</b>Nationwide shipping</span></div><div><i class="ri-shield-check-line"></i><span><b>Safe checkout</b>COD available</span></div><div><i class="ri-image-2-line"></i><span><b>{{ gallery|length }}-view gallery</b>Detailed product inspection</span></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="gallery-modal" id="galleryModal" aria-hidden="true">
+  <div class="gallery-modal-backdrop" data-close-zoom></div>
+  <div class="gallery-modal-card" role="dialog" aria-modal="true" aria-label="{{ product.title }} product image viewer">
+    <button class="modal-close" type="button" data-close-zoom aria-label="Close image viewer"><i class="ri-close-line"></i></button>
+    <div class="modal-toolbar">
+      <span class="modal-counter"><span id="zoomIndex">1</span> / <span id="zoomTotal">{{ gallery|length }}</span></span>
+      <div class="modal-tools" aria-label="Image zoom controls">
+        <button type="button" data-zoom-out aria-label="Zoom out"><i class="ri-subtract-line"></i></button>
+        <button type="button" data-reset-zoom aria-label="Reset zoom">100%</button>
+        <button type="button" data-zoom-in aria-label="Zoom in"><i class="ri-add-line"></i></button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <aside class="modal-thumbs" aria-label="Gallery thumbnails">
+        {% for image in gallery %}
+        <button type="button" class="modal-thumb {{ 'active' if loop.first else '' }}" data-modal-thumb data-index="{{ loop.index0 }}" aria-label="Open image {{ loop.index }}"><img src="{{ image }}" alt=""></button>
+        {% endfor %}
+      </aside>
+      <div class="modal-stage" id="zoomStage" tabindex="0">
+        <img id="zoomImage" src="{{ gallery[0] }}" alt="{{ product.title }} enlarged" draggable="false">
+        <div class="stage-hint"><i class="ri-zoom-in-line"></i> Scroll / pinch to zoom</div>
+      </div>
+    </div>
+    <button class="modal-arrow left" type="button" data-gallery-prev aria-label="Previous image"><i class="ri-arrow-left-s-line"></i></button>
+    <button class="modal-arrow right" type="button" data-gallery-next aria-label="Next image"><i class="ri-arrow-right-s-line"></i></button>
+  </div>
+</div>
+
+<section class="section related"><div class="container"><div class="section-head"><div><div class="eyebrow">You may also like</div><h2>More from <i>{{ product.category|title }}.</i></h2></div></div><div class="product-grid">{% for p in related %}{% include '_product_card.html' %}{% endfor %}</div></div></section>
+<script>
+function stepQty(d){const i=document.getElementById('detailQty');i.value=Math.max(1,Math.min(parseInt(i.max||99),parseInt(i.value||1)+d));}
+(function(){
+  const root=document.querySelector('[data-product-gallery]');
+  const modal=document.getElementById('galleryModal');
+  const main=document.getElementById('galleryMain');
+  const stage=document.getElementById('zoomStage');
+  const zoomImage=document.getElementById('zoomImage');
+  if(!root||!modal||!main||!stage||!zoomImage)return;
+
+  const sources=[...root.querySelectorAll('[data-gallery-thumb]')].map(b=>b.dataset.src).filter(Boolean);
+  if(!sources.length)return;
+  const galleryIndex=document.getElementById('galleryIndex');
+  const zoomIndex=document.getElementById('zoomIndex');
+  const total=document.getElementById('galleryTotal');
+  const zoomTotal=document.getElementById('zoomTotal');
+  const mainThumbs=[...root.querySelectorAll('[data-gallery-thumb]')];
+  const modalThumbs=[...document.querySelectorAll('[data-modal-thumb]')];
+  total.textContent=sources.length; zoomTotal.textContent=sources.length;
+
+  let idx=0;
+  let zoom=1;
+  let panX=0;
+  let panY=0;
+  let dragging=false;
+  let dragStartX=0;
+  let dragStartY=0;
+  let startPanX=0;
+  let startPanY=0;
+  const pointers=new Map();
+  let pinchStartDistance=0;
+  let pinchStartZoom=1;
+  const MAX_ZOOM=8;
+  const ZOOM_STEP=.5;
+
+  // The key fix: size the displayed image from its real pixel dimensions so
+  // 100% always means "fit the entire image on screen", not "fill the stage".
+  function clamp(v,min,max){return Math.min(max,Math.max(min,v));}
+  function stageBox(){return stage.getBoundingClientRect();}
+
+  function fitBaseSize(){
+    const rect=stageBox();
+    const nw=zoomImage.naturalWidth||1;
+    const nh=zoomImage.naturalHeight||1;
+    const pad=36;
+    const maxW=Math.max(120,rect.width-pad);
+    const maxH=Math.max(120,rect.height-pad);
+    // Allow a modest upscale when source media is smaller than the available viewer.
+    // This keeps the first view visually large while still fitting the whole image.
+    const fit=Math.min(maxW/nw,maxH/nh,1.35);
+    const cssW=Math.max(1,Math.round(nw*fit));
+    const cssH=Math.max(1,Math.round(nh*fit));
+    zoomImage.style.width=cssW+'px';
+    zoomImage.style.height=cssH+'px';
+    zoomImage.dataset.baseWidth=String(cssW);
+    zoomImage.dataset.baseHeight=String(cssH);
+  }
+
+  function maxPan(){
+    const rect=stageBox();
+    const bw=Number(zoomImage.dataset.baseWidth||rect.width);
+    const bh=Number(zoomImage.dataset.baseHeight||rect.height);
+    return {
+      x:Math.max(0,(bw*zoom-rect.width)/2),
+      y:Math.max(0,(bh*zoom-rect.height)/2)
+    };
+  }
+
+  function constrainPan(){
+    const m=maxPan();
+    panX=clamp(panX,-m.x,m.x);
+    panY=clamp(panY,-m.y,m.y);
+  }
+
+  function applyTransform(animate=true){
+    zoomImage.style.transition=animate?'transform .16s cubic-bezier(.2,.8,.2,1)':'none';
+    zoomImage.style.transform=`translate3d(${panX}px,${panY}px,0) scale(${zoom})`;
+    zoomImage.style.cursor=zoom>1?'grab':'zoom-in';
+    const reset=document.querySelector('[data-reset-zoom]');
+    if(reset)reset.textContent=Math.round(zoom*100)+'%';
+  }
+
+  function resetView(){
+    zoom=1;panX=0;panY=0;
+    fitBaseSize();
+    applyTransform(false);
+  }
+
+  function setZoomFromGesture(next,focusX=0,focusY=0){
+    setZoom(next,focusX,focusY);
+  }
+
+  function setZoom(next,focusX=0,focusY=0){
+    const old=zoom;
+    zoom=clamp(next,1,MAX_ZOOM);
+    if(zoom===1){panX=0;panY=0;}
+    else if(old!==zoom){
+      // Keep the point under the pointer roughly fixed while zooming.
+      const factor=(zoom-old)/zoom;
+      panX-=focusX*factor;
+      panY-=focusY*factor;
+      constrainPan();
+    }
+    applyTransform();
+  }
+
+  function render(){
+    const src=sources[idx];
+    main.src=src;
+    zoomImage.src=src;
+    galleryIndex.textContent=idx+1;
+    zoomIndex.textContent=idx+1;
+    mainThumbs.forEach((b,i)=>b.classList.toggle('active',i===idx));
+    modalThumbs.forEach((b,i)=>b.classList.toggle('active',i===idx));
+    zoomImage.onload=()=>resetView();
+    if(zoomImage.complete)resetView();
+  }
+
+  function move(delta){
+    idx=(idx+delta+sources.length)%sources.length;
+    render();
+  }
+
+  function open(){
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden','false');
+    document.body.classList.add('gallery-open');
+    render();
+    setTimeout(()=>stage.focus(),30);
+  }
+
+  function close(){
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden','true');
+    document.body.classList.remove('gallery-open');
+  }
+
+  mainThumbs.forEach(b=>b.addEventListener('click',()=>{idx=Number(b.dataset.index);render();}));
+  modalThumbs.forEach(b=>b.addEventListener('click',()=>{idx=Number(b.dataset.index);render();}));
+  document.querySelectorAll('[data-gallery-prev]').forEach(b=>b.addEventListener('click',()=>move(-1)));
+  document.querySelectorAll('[data-gallery-next]').forEach(b=>b.addEventListener('click',()=>move(1)));
+  document.querySelectorAll('[data-open-zoom]').forEach(b=>b.addEventListener('click',open));
+  document.querySelectorAll('[data-close-zoom]').forEach(b=>b.addEventListener('click',close));
+  document.querySelector('[data-zoom-in]')?.addEventListener('click',()=>setZoom(zoom+ZOOM_STEP));
+  document.querySelector('[data-zoom-out]')?.addEventListener('click',()=>setZoom(zoom-ZOOM_STEP));
+  document.querySelector('[data-reset-zoom]')?.addEventListener('click',resetView);
+
+  // Mouse wheel = zoom. Prevent the page from scrolling while the pointer is
+  // over the image viewer, just like modern product-image lightboxes.
+  stage.addEventListener('wheel',e=>{
+    e.preventDefault();
+    const r=stage.getBoundingClientRect();
+    const x=e.clientX-r.left-r.width/2;
+    const y=e.clientY-r.top-r.height/2;
+    setZoomFromGesture(zoom + (e.deltaY<0?.25:-.25),x,y);
+  },{passive:false});
+
+  // Drag at zoomed scale.
+  stage.addEventListener('pointerdown',e=>{
+    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pointers.size===1 && zoom>1){
+      dragging=true;
+      dragStartX=e.clientX;dragStartY=e.clientY;
+      startPanX=panX;startPanY=panY;
+      stage.setPointerCapture?.(e.pointerId);
+      zoomImage.style.cursor='grabbing';
+    } else if(pointers.size===2){
+      const pts=[...pointers.values()];
+      pinchStartDistance=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);
+      pinchStartZoom=zoom;
+    }
+  });
+
+  stage.addEventListener('pointermove',e=>{
+    if(!pointers.has(e.pointerId))return;
+    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pointers.size===2){
+      const pts=[...pointers.values()];
+      const dist=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);
+      if(pinchStartDistance>0)setZoomFromGesture(pinchStartZoom*(dist/pinchStartDistance));
+      return;
+    }
+    if(dragging){
+      panX=startPanX+(e.clientX-dragStartX);
+      panY=startPanY+(e.clientY-dragStartY);
+      constrainPan();
+      applyTransform(false);
+    }
+  });
+
+  function pointerDone(e){
+    pointers.delete(e.pointerId);
+    if(pointers.size<2)pinchStartDistance=0;
+    if(pointers.size===0){dragging=false;zoomImage.style.cursor=zoom>1?'grab':'zoom-in';}
+  }
+  stage.addEventListener('pointerup',pointerDone);
+  stage.addEventListener('pointercancel',pointerDone);
+  stage.addEventListener('pointerleave',e=>{if(dragging && pointers.size===1){pointers.delete(e.pointerId);dragging=false;zoomImage.style.cursor=zoom>1?'grab':'zoom-in';}});
+
+  stage.addEventListener('dblclick',e=>{
+    const next=zoom<2 ? 2 : 1;
+    const r=stage.getBoundingClientRect();
+    const x=e.clientX-r.left-r.width/2;
+    const y=e.clientY-r.top-r.height/2;
+    setZoom(next,x,y);
+  });
+
+  // Keyboard navigation and Escape close.
+  document.addEventListener('keydown',e=>{
+    if(!modal.classList.contains('open'))return;
+    if(e.key==='Escape'){e.preventDefault();close();}
+    else if(e.key==='ArrowLeft'){e.preventDefault();move(-1);}
+    else if(e.key==='ArrowRight'){e.preventDefault();move(1);}
+    else if(e.key==='+')setZoom(zoom+ZOOM_STEP);
+    else if(e.key==='-')setZoom(zoom-ZOOM_STEP);
+    else if(e.key==='0')resetView();
+  });
+
+  window.addEventListener('resize',()=>{if(modal.classList.contains('open')){fitBaseSize();constrainPan();applyTransform(false);}});
+  render();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}HomeNest Admin{% endblock %}</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+<script>window.CSRF_TOKEN={{ csrf_token|tojson }};</script>
+</head>
+<body class="admin-shell">
+<div class="admin-app">
+  <aside class="sidebar" id="adminSidebar">
+    <div class="side-brand">
+      <a href="{{ url_for('admin_dashboard') }}" class="side-brand-link" aria-label="{{ settings.get('store_name','HomeNest Store') }} admin">
+        <img class="brand-logo full-brand-logo" src="{{ settings.get('logo_path','/static/uploads/homenest-logo.png') }}" alt="{{ settings.get('store_name','HomeNest Store') }} logo">
+      </a>
+      <button id="sideClose" aria-label="Close menu"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="store-switcher"><span class="store-avatar"><img src="{{ settings.get('logo_path','/static/uploads/homenest-logo.png') }}" alt=""></span><div><b>{{ settings.get('store_name','HomeNest Store') }}</b><small><i></i> Store online</small></div><i class="ri-arrow-down-s-line"></i></div>
+    <nav class="side-nav">
+      <span class="side-caption">OVERVIEW</span>
+      <a class="{{ 'active' if request.endpoint == 'admin_dashboard' else '' }}" href="{{ url_for('admin_dashboard') }}"><i class="ri-dashboard-3-line"></i><span>Dashboard</span></a>
+      <a class="{{ 'active' if request.endpoint in ['admin_orders','admin_order_detail'] else '' }}" href="{{ url_for('admin_orders') }}"><i class="ri-shopping-bag-3-line"></i><span>Orders</span>{% if pending %}<em>{{ pending }}</em>{% endif %}</a>
+      <span class="side-caption">CATALOG</span>
+      <a class="{{ 'active' if request.endpoint == 'admin_products' and not request.args.get('stock') else '' }}" href="{{ url_for('admin_products') }}"><i class="ri-price-tag-3-line"></i><span>Products</span></a>
+      <a class="{{ 'active' if request.endpoint == 'admin_products' and request.args.get('stock') else '' }}" href="{{ url_for('admin_products', stock='low') }}"><i class="ri-archive-stack-line"></i><span>Inventory</span>{% if low_stock %}<em class="warn">{{ low_stock }}</em>{% endif %}</a>
+      <span class="side-caption">CUSTOMERS & GROWTH</span>
+      <a class="{{ 'active' if request.endpoint in ['admin_customers','admin_customer_detail'] else '' }}" href="{{ url_for('admin_customers') }}"><i class="ri-user-3-line"></i><span>Customers</span></a>
+      <a class="{{ 'active' if request.endpoint == 'admin_coupons' else '' }}" href="{{ url_for('admin_coupons') }}"><i class="ri-coupon-3-line"></i><span>Discounts</span></a>
+      <span class="side-caption">STORE</span>
+      <a class="{{ 'active' if request.endpoint == 'admin_settings' else '' }}" href="{{ url_for('admin_settings') }}"><i class="ri-layout-4-line"></i><span>Store content</span></a>
+      <a class="{{ 'active' if request.endpoint == 'admin_security' else '' }}" href="{{ url_for('admin_security') }}"><i class="ri-shield-check-line"></i><span>Security</span></a>
+    </nav>
+    <div class="side-footer">
+      <a class="store-preview" target="_blank" href="{{ url_for('home') }}"><span><i class="ri-eye-line"></i></span><div><b>View storefront</b><small>Open live shop</small></div><i class="ri-arrow-right-up-line"></i></a>
+      <div class="footer-links"><a href="{{ url_for('admin_export',kind='orders') }}" title="Export orders"><i class="ri-download-2-line"></i></a><a href="{{ url_for('admin_export',kind='products') }}" title="Export products"><i class="ri-file-list-3-line"></i></a><a href="{{ url_for('logout') }}" title="Sign out"><i class="ri-logout-box-r-line"></i></a></div>
+    </div>
+  </aside>
+
+  <main class="main-area">
+    <header class="topbar">
+      <div class="top-left"><button class="mobile-toggle" id="sideOpen" aria-label="Open menu"><i class="ri-menu-4-line"></i></button><div class="breadcrumb"><span>HomeNest</span><i class="ri-arrow-right-s-line"></i><b>{% block section_name %}Dashboard{% endblock %}</b></div></div>
+      <div class="top-actions">
+        <div class="top-search"><i class="ri-search-2-line"></i><input id="adminSearch" placeholder="Search your store"><kbd>/</kbd></div>
+        <a class="icon-action" href="{{ url_for('admin_orders',status='Pending') }}" title="Pending orders"><i class="ri-notification-3-line"></i>{% if pending %}<span>{{ pending }}</span>{% endif %}</a>
+        <a class="icon-action" href="{{ url_for('home') }}" target="_blank" title="View store"><i class="ri-external-link-line"></i></a>
+        <div class="admin-user"><span>{{ (current_user.name[:1] if current_user else 'A')|upper }}</span><div><b>{{ current_user.name if current_user else 'Admin' }}</b><small>Administrator</small></div><i class="ri-arrow-down-s-line"></i></div>
+      </div>
+    </header>
+    {% with messages=get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-stack">{% for category,msg in messages %}<div class="flash {{ category }}"><i class="ri-checkbox-circle-fill"></i><span>{{ msg }}</span><button onclick="this.parentElement.remove()">×</button></div>{% endfor %}</div>{% endif %}{% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+<script>
+const side=document.getElementById('adminSidebar');
+document.getElementById('sideOpen')?.addEventListener('click',()=>side.classList.add('open'));
+document.getElementById('sideClose')?.addEventListener('click',()=>side.classList.remove('open'));
+document.querySelectorAll('form[data-confirm]').forEach(f=>f.addEventListener('submit',e=>{if(!confirm(f.dataset.confirm))e.preventDefault()}));
+const search=document.getElementById('adminSearch');
+const jump={orders:'{{ url_for('admin_orders') }}',products:'{{ url_for('admin_products') }}',catalog:'{{ url_for('admin_products') }}',inventory:'{{ url_for('admin_products',stock='low') }}',customers:'{{ url_for('admin_customers') }}',discounts:'{{ url_for('admin_coupons') }}',coupons:'{{ url_for('admin_coupons') }}',content:'{{ url_for('admin_settings') }}',settings:'{{ url_for('admin_settings') }}',security:'{{ url_for('admin_security') }}',dashboard:'{{ url_for('admin_dashboard') }}'};
+search?.addEventListener('keydown',e=>{if(e.key==='Enter'){let v=search.value.trim().toLowerCase();let hit=Object.keys(jump).find(k=>k===v||k.startsWith(v));if(hit)location.href=jump[hit]}});
+document.addEventListener('keydown',e=>{if(e.key==='/'&&document.activeElement?.tagName!=='INPUT'){e.preventDefault();search?.focus()}});
+</script>
+</body></html>

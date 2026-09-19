@@ -1,0 +1,22 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}HomeNest Store{% endblock %}</title>
+<meta name="description" content="{{ settings.store_name }} — thoughtful products for modern everyday living."><link rel="icon" type="image/png" href="{{ settings.favicon_path or settings.logo_path }}">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<script>window.CSRF_TOKEN={{ csrf_token|tojson }};</script>
+</head><body>
+<div class="topbar">{{ settings.store_notice if settings is defined else "Free delivery on orders over ₨5,000" }} <span>•</span> Easy COD checkout <span>•</span> 7-day support</div>
+<header class="site-header"><div class="container nav-row">
+<a class="brand brand-full-logo" href="{{ url_for('home') }}" aria-label="{{ settings.store_name }} home">{% if settings.logo_path %}<span class="brand-logo-wrap"><img class="brand-logo" src="{{ settings.logo_path }}" alt="{{ settings.store_name }} logo"></span>{% else %}<span class="brand-mark">H</span>{% endif %}</a>
+<form class="search" action="{{ url_for('shop') }}" method="get" autocomplete="off"><i class="ri-search-line"></i><input id="globalSearch" name="q" placeholder="Search products, categories..." value="{{ request.args.get('q','') }}"><button aria-label="Search"><i class="ri-arrow-right-line"></i></button><div id="searchSuggestions"></div></form>
+<nav class="nav-links"><a href="{{ url_for('shop') }}">Shop</a><a href="{{ url_for('about') }}">About</a><a href="{{ url_for('contact') }}">Contact</a></nav>
+<div class="header-actions"><a class="icon-btn" href="{{ url_for('account') if current_user else url_for('login') }}" title="Account"><i class="ri-user-3-line"></i></a><a class="cart-btn" href="{{ url_for('cart') }}"><i class="ri-shopping-bag-3-line"></i><span>Bag</span><em id="cartCount">{{ cart_count }}</em></a><button class="mobile-menu" id="mobileMenu"><i class="ri-menu-4-line"></i></button></div>
+</div></header>
+<div class="mobile-nav" id="mobileNav"><a href="{{ url_for('shop') }}">Shop</a><a href="{{ url_for('about') }}">About</a><a href="{{ url_for('contact') }}">Contact</a><a href="{{ url_for('account') if current_user else url_for('login') }}">Account</a></div>
+{% with messages=get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-wrap container">{% for category,msg in messages %}<div class="flash {{ category }}">{{ msg }}<button onclick="this.parentElement.remove()">×</button></div>{% endfor %}</div>{% endif %}{% endwith %}
+<main>{% block content %}{% endblock %}</main>
+<footer><div class="container footer-grid"><div><a class="brand brand-full-logo light" href="{{ url_for('home') }}" aria-label="{{ settings.store_name }} home">{% if settings.logo_path %}<span class="brand-logo-wrap"><img class="brand-logo" src="{{ settings.logo_path }}" alt="{{ settings.store_name }} logo"></span>{% else %}<span class="brand-mark">H</span>{% endif %}</a><p>{{ settings.footer_text or "Thoughtful finds for modern everyday living — from useful tech to cozy home upgrades." }}</p></div><div><h4>Shop</h4><a href="{{ url_for('shop',category='electronics') }}">Electronics</a><a href="{{ url_for('shop',category='home') }}">Home</a><a href="{{ url_for('shop',category='fashion') }}">Fashion</a><a href="{{ url_for('shop',category='beauty') }}">Beauty</a></div><div><h4>Help</h4><a href="{{ url_for('contact') }}">Contact</a><a href="{{ url_for('account') }}">Orders</a><a href="{{ url_for('about') }}">About</a><a href="{{ url_for('admin_login') }}">Admin</a></div><div><h4>Stay in the loop</h4><p>New drops, useful finds and seasonal offers.</p><form class="newsletter" onsubmit="return subscribeNews(event)"><input type="email" placeholder="Email address" required><button>Join</button></form></div></div><div class="container copyright">© 2026 HomeNest Store <span>Built for a clean shopping experience.</span></div></footer>
+<div id="toast" class="toast"></div><script src="{{ url_for('static', filename='js/app.js') }}"></script></body></html>
