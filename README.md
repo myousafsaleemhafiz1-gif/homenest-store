@@ -60,7 +60,7 @@ Immediately change the admin password from **Admin → Security** before any rea
 - `static/css/app.css` — storefront styling
 - `static/css/admin.css` — admin dashboard styling
 - `static/js/app.js` — storefront interactions
-- `.env.example` — environment configuration template
+- `.env ` — environment configuration template
 - `TECH_RESEARCH.md` — admin research/design notes
 
 ## Production note
